@@ -10,13 +10,10 @@ const resolvers = {
     getSingleUser: async (parent, { username }) => {
       return User.findOne({ username }).populate('books');
     },
-    books: async (parent, { username }) => {
-      const params = username ? { username } : {};
-      return Book.find(params);
+    getSavedBooks: async (parent, { username }) => {
+      return User.findOne({ username }).populate('books');
     },
-    book: async (parent, { bookId }) => {
-      return Book.findOne({ _id: bookId });
-    },
+
     me: async (parent, args, context) => {
       if (context.user) {
         return User.findOne({ _id: context.user._id }).populate('books');
@@ -48,27 +45,40 @@ const resolvers = {
 
       return { token, user };
     },
-    saveBook: async (parent, args, context) => {
-      if (context.user) {
-        const book = await Book.create({
-          title: args.title,
-          author: context.user.username,
-          title: args.title,
-          authors: [args.authors],
-          bookId: args.bookId,
-          description: args.description,
-          image: args.image
-        });
 
-        await User.findOneAndUpdate(
-          { _id: context.user._id },
-          { $addToSet: { savedBooks: book } }
-        );
+    saveBook: async (parent, { content }, context) => {
+			// if (context.user) {
+				const user = await User.findByIdAndUpdate(
 
-        return book;
-      }
-      throw new AuthenticationError('You need to be logged in!');
-    },
+					{ _id: context.user._id },
+					{ $push: { savedBooks: content } },
+          
+					{ new: true }
+				);
+
+				return user;
+			// }
+			// throw new AuthenticationError("You need to be logged in!");
+		},
+    // saveBook: async (parent, args, context) => {
+    //   if (context.user) {
+    //     const book = await Book.create({
+    //       title: args.title,
+    //       authors: [args.authors],
+    //       bookId: args.bookId,
+    //       description: args.description,
+    //       image: args.image
+    //     });
+
+    //     await User.findOneAndUpdate(
+    //       { _id: context.user._id || args._id},
+    //       { $addToSet: { savedBooks: book } }
+    //     );
+
+    //     return book;
+    //   }
+    //   throw new AuthenticationError('You need to be logged in!');
+    // },
 
     deleteBook: async (parent, { bookId }, context) => {
       if (context.user) {
@@ -86,6 +96,7 @@ const resolvers = {
       }
       throw new AuthenticationError('You need to be logged in!');
     },
+
   },
 };
 
